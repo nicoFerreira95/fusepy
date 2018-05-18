@@ -65,6 +65,13 @@ class FUSE_fs(LoggingMixIn, Operations):
         except Exception as e:
             logger.exception(e)
 
+    def rmdir(path): #This syscall deletes a directory, in Zookeeper's case is a zNode with children
+        try:
+            zk.delete(path, True) #Recursive: True, this function will delete a zNode if it exists and recursively delete all its children
+        except Exception as e:
+            logger.exception(e)
+
+            
     def write():
 
 
