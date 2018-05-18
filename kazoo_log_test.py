@@ -17,11 +17,11 @@ from fuse import FUSE, FuseOSError, Operations, LoggingMixIn
 
 def my_listener(state):
     if state == KazooState.CONNECTED:
-        print "Connection achieved."
+        logger.warning("Connection established.")
     elif state == KazooState.SUSPENDED:
-        print "Connection suspended."
+        logger.warning("Connection suspended.")
     elif state == KazooState.LOST:
-        print "Connection lost."
+        logger.warning("Connection lost.")
 
 #This is the class that FUSE 
 class FUSE_fs(LoggingMixIn, Operations):
@@ -36,25 +36,34 @@ class FUSE_fs(LoggingMixIn, Operations):
     def mkdir(path, state):
         #We can create a dir if the connection it's still on.
         if (state == KazooState.CONNECTED):
-            if (not(zk.exists(path, None)): #Check if the specified path/node already exists
-                #If it doesn't exist, we create the path to the node
-                zk.ensure_path(path, None)
-            else
-                print ("Directory already exists.")
-            
+            try:
+                if (not(zk.exists(path, None)): #Check if the specified path/node already exists
+                    #If it doesn't exist, we create the path to the node
+                    zk.ensure_path(path, None)
+                else
+                    logger.warning("Directory already exists.")
+            except Exception as e:
+                logger.exception(e)
 
     def readdir(path, state):
-        if (len(zk.get_children(path, None, False) > 0):
-            #If the length of the list that get_children returns is greater than 0 then it is a dir, because files don't have children
-            print os.listdir(path)
-        else
-            print ("The given path is not a directory.")
+        try:
+            for each item in zk.get_children(path, None, False):
+                print(item + "/n")
+            else
+                print ("The given path is not a directory.")
+        except Exception as e:
+            logger.exception(e)
 
     def open():
 
 
-    def create():
-        zk.create()
+    def create(path, value):
+        #The create function creates a znode based on the given path and value, acl=None, ephemeral=False, sequential=False and makepath=False
+        try:
+            if (zk.exists(path, None) is None):
+                zk.create(path, value, None, False, False, False)
+        except Exception as e:
+            logger.exception(e)
 
     def write():
 
@@ -79,11 +88,12 @@ if __name__ == '__main__':
         exit(1)
 
     logging.basicConfig(level=logging.DEBUG)
+    logger = logging.getLogger()
     
     #This is the part in which we initialize the Apache Zookeeper connection    
     zk = KazooClient("localhost:2181")
     zk.add_listener(my_listener)
     zk.start()
 
-    fuse = FUSE(Loopback(argv[1]), argv[2], foreground=True)
+    fuse = FUSE(FUSE_fs(argv[1]), argv[2], foreground=True)
 
