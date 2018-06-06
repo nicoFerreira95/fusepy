@@ -74,7 +74,7 @@ class FUSE_fs(LoggingMixIn, Operations):
         try:
             if(not(zk.exists(path,None)) and flags==O_WRONLY):
                 #We have to create a new zNode
-                zk.create(path,"",None,False,False,Falseq)
+                zk.create(path,"",None,False,False,Falseqs)
         except Exception, e:
             logger.exception(e)
 
@@ -99,8 +99,11 @@ class FUSE_fs(LoggingMixIn, Operations):
                 dir_list += [child.split(':')]
 
     def release(self, path, fh):
-
-    def rename(self, old, new):
+         if (state == KazooState.CONNECTED):
+            zk.stop()
+            print ("Connection has been stopped.")
+            zk.closeself, path, flags ()
+            print ("All Zookeeper resources has been freed.")
 
     def rmdir(self, path): #This syscall deletes a directory, in Zookeeper's case is a zNode with children
         try:
@@ -109,8 +112,14 @@ class FUSE_fs(LoggingMixIn, Operations):
             logger.exception(e)
 
     def symlink(self, target, source):
+        return os.symlink(source,target)
 
     def truncate(self, path, length, fh=None):
+        try:
+            open(path,'r+') as f:
+                f.truncate(length)
+        except Exception, e:
+            logger.exception(e)
 
     def unlink(self, path):
         try:
@@ -123,13 +132,6 @@ class FUSE_fs(LoggingMixIn, Operations):
     def write(self, path, data, offset, fh):
         #Here I have to use the set function
         #Ask Raul how to work with this function, writing in a zNode what is the exact thing you are doing by setting data in it?
-
-    def close(state):
-        if (state == KazooState.CONNECTED):
-            zk.stop()
-            print ("Connection has been stopped.")
-            zk.closeself, path, flags ()
-            print ("All Zookeeper resources has been freed.")
 
 
 if __name__ == '__main__':
