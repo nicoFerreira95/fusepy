@@ -42,6 +42,21 @@ class FUSE_fs(LoggingMixIn, Operations):
         """With the given uid with a syscall I can get the username and then use the function
         make_digest_acl to set the username owner of the ACL attached to the zNode (set_acls)
         to set the username owner of the node."""
+        try:
+            if(zk.exists(path, None) is not None):
+                #With this command, I get the associated username to a UID
+                import pwd, grp
+                user_query = pwd.getpwuid(uid)
+                user = user_query[0]
+                user_acl = zk.make_digest_acl(user, '' all=True)
+                zk.set_acls(path, user_acl, version=-1)
+                group_query = grp.getgrgid(gid)
+                members_list = group_query(3)
+                for each member in members_list:
+                    member_acl = zk.make_digest_acl(member, '' all=True)
+                    zk.set_acls(path, member_acl, version=-1)
+        except Exception, e:
+            logger.exception(e)
 
     def create(path, value):
         #The create function creates a znode based on the given path and value, acl=None, ephemeral=False, sequential=False and makepath=False
