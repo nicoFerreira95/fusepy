@@ -12,6 +12,7 @@ from threading import Lock
 import os, pwd, grp
 import kazoo
 import getpass
+import StringIO
 
 from fuse import FUSE, FuseOSError, Operations, LoggingMixIn
 
@@ -51,7 +52,8 @@ class FUSE_fs(LoggingMixIn, Operations):
                 if ( counter == 0 ): #The first time, the ACL has to be set for the actual user
                     #in list_digit I have the three digits that indicate true or false for read, write and execute
                     curr_user = getpass.getuser()
-                    user_acl = self.zk.make_digest_acl(user, '', all=list_digit[1])
+                    user_acl = self.zk.make_digest_acl(user, '', read=list_digit[0],
+                    write=list_digit[1],create=list_digit[1],delete=list_digit[1])
                     self.zk.set_acls(path, user_acl, version=-1)
                 elif ( counter == 1): #The second time its for all the members in the actual user group
                     #I have to get all the users in the current user group
@@ -60,12 +62,14 @@ class FUSE_fs(LoggingMixIn, Operations):
                     group_query = grp.getgrgid(query[3])
                     members_list = group_query[3]
                     for member in members_list:
-                        member_acl = self.zk.make_digest_acl(member, '', all=list_digit[1])
+                        member_acl = self.zk.make_digest_acl(member, '',read=list_digit[0],
+                    write=list_digit[1],create=list_digit[1],delete=list_digit[1])
                         self.zk.set_acls(path, member_acl, version=-1)
                 elif( counter == 2): #The third time its for all users
                     #I have to get the username of all the users registered in the OS
                     for p in pwd.getpwall():
-                        all_acl = self.zk.make_digest_acl(p[0], '', all=list_digit[1])
+                        all_acl = self.zk.make_digest_acl(p[0], '',read=list_digit[0],
+                    write=list_digit[1],create=list_digit[1],delete=list_digit[1])
                         self.zk.set_acls(path, member_acl, version=-1)
                 counter += 1
             return True
@@ -195,12 +199,22 @@ class FUSE_fs(LoggingMixIn, Operations):
             logger.exception(e)
 
     def write(self, path, data, offset, fh):
-        #Here I have to use the set function
-        #Ask Raul how to work with this function, writing in a zNode what is the exact thing you are doing by setting data in it?
+        """By using the set function you set a value in a given zNode.
+        Open the path file in rw+ mode to write.
+        Put the pointer in the offset position given in the parameters.
+        Read all the file content from the pointer to the end.
+        Write the data given in the parameters and set the zNode value with that content."""
         try:
-            pass
-        except:
-            logger.exception("Not implemented.")
+            file = open(path,"rw+")
+            file.seek(offset,0)
+            content = file.read()
+            output = StringIO.StringIO(content)
+            output.write(data)
+            zk.set(path,output,version==-1)
+            return True
+        except Exception as e:
+            logger.exception(e)
+            return False
 
 if __name__ == '__main__':
     if len(argv) != 3:

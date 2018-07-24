@@ -1,0 +1,12 @@
+Notes about tests:
+- Almost all tests tell me that FUSE class has no attribute named 'Operations'
+- The functions that are instantiation methods requiere another parameter it says that it needs N parameters (N-1 given) because of the 'self' parameter
+- When trying to compute the function 'get_children' it tells me that it can not iterate over None object even though via code
+I check wether the list that is returned is empty or not before iterating over it but it raises that error regardless of the outcome of the conditional.
+ 
+Functions that were refactored:
+- Write function added entirely.
+- Chmod function refactored given Raul specifications.
+- Chown function refactores given Raul specifications.
+- Unit test modules refactores given Raul specifications.
+- Test for a given order of functions added.

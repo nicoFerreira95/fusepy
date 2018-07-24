@@ -1,5 +1,11 @@
 import unittest
-import kazoo_log_test as kz
+import kazoo_fs_interface as kz
+from kazoo.client import KazooClient
+from kazoo.security import make_digest_acl_credential, CREATOR_ALL_ACL
+
+test_mkdir_path = "/home/nicolas/workspace/2018/SE2/mnt_test/test_mkdir"
+test_create_path = "/home/nicolas/workspace/2018/SE2/mnt_test/test_create.txt"
+test_completo_path = "/home/nicolas/workspace/2018/SE2/mnt_test/test_completo.txt"
 
 class TestFSMethods(unittest.TestCase):
 
@@ -16,18 +22,30 @@ class TestFSMethods(unittest.TestCase):
     fuse = kz.FUSE(kz.FUSE_fs(root, zk), mountpoint, foreground=True)
 
     def test_mkdir(self):
-        self.assertEqual(self.fuse.mkdir("/home/nicolas/workspace/2018/SE2/mnt_test/test_mkdir",777),"/home/nicolas/workspace/2018/SE2/mnt_test/test_mkdir")
+        self.assertEqual(self.fuse.mkdir(test_mkdir_path,777),test_mkdir_path)
 
     def test_create(self):
-        self.assertEqual(self.fuse.create("/home/nicolas/workspace/2018/SE2/mnt_test/test_create.txt", b"Hola"),"/home/nicolas/workspace/2018/SE2/mnt_test/test_create.txt")
+        self.assertEqual(self.fuse.create(test_create_path, b"Hola"),test_create_path)
 
     def test_chmod(self):
-        self.assertTrue(self.fuse.chmod("/home/nicolas/workspace/2018/SE2/mnt_test/test_create.txt",777))
+        chmod_test_acl = 777
+        self.assertTrue(self.fuse.chmod(test_create_path,chmod_test_acl))
 
     def test_chown(self):
-        self.assertTrue(self.fuse.chown("/home/nicolas/workspace/2018/SE2/mnt_test/test_create.txt", 1000, 1000))
+        self.assertTrue(self.fuse.chown(test_create_path, 1000, 1000))
+
     def test_open(self):
-        self.assertEqual(self.fuse.open("/home/nicolas/workspace/2018/SE2/mnt_test/test_create.txt",O_WRONLY),0)
+        self.assertEqual(self.fuse.open(test_create_path,O_WRONLY),0)
+
+    def test_write(self):
+        self.assertTrue(self.fuse.write(test_create_path,b"Hola",0, None))
+        self.assertTrue(self.fuse.write(test_create_path,b"Que tal como estas",5, None))
+
+    def test_completo(self):
+        self.fuse.create(test_completo_path,b"")
+        self.fuse.open(test_completo_path,O_WRONLY)
+        self.fuse.write(test_completo_path,b"Hola test completo",0,None)
+
 
 if __name__ == '__main__':
     unittest.main()
